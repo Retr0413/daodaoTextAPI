@@ -1,30 +1,30 @@
 version: '3.8'
 
 services:
-  db:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: text_db
-      MYSQL_USER: text_user
-      MYSQL_PASSWORD: Lita0601
-    ports:
-      - "3306:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-
   web:
     build: .
-    command: python manage.py
+    command: python manage.py runserver --host=0.0.0.0
     volumes:
       - .:/app
     ports:
-      - "5000:5000"
+      - "5000:5000"  
     environment:
       FLASK_ENV: development
-      DATABASE_URI: mysql+pymysql://text_user:Lita0601@db/text_db
+      DATABASE_URI: mysql+mysqlconnector://your_user:your_password@db/your_database
     depends_on:
       - db
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: your_password
+      MYSQL_DATABASE: your_database
+      MYSQL_USER: your_user
+      MYSQL_PASSWORD: your_password
+    ports:
+      - "3306:3306" 
+    volumes:
+      - db_data:/var/lib/mysql
 
 volumes:
   db_data:
