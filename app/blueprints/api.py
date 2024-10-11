@@ -25,7 +25,7 @@ def create_text():
         name=data['name'],
         title=data['title'],
         thumbnail=data.get('thumbnail'),
-        description=data.get('description'),  # typo: 'defcription' -> 'description'
+        description=data.get('description'),  
         body=data['body'],
         tags=data.get('tags'),
         is_public=data.get('is_public', True),
