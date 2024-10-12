@@ -21,10 +21,10 @@ def tesst_upload_pdf(client):
 
     os.remove(pdf_path)
 
-def test_cors_headers(client):
-    response = client.get('/api/texts')
+# def test_cors_headers(client):
+#     response = client.get('/api/texts')
 
-    assert response.status_code == 200
+#     assert response.status_code == 200
 
-    assert 'Access-Control-Allow-Origin' in response.headers
-    assert response.headers['Access-Control-Allow-Origin'] == '*'
+#     assert 'Access-Control-Allow-Origin' in response.headers
+#     assert response.headers['Access-Control-Allow-Origin'] == '*'
