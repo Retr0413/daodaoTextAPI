@@ -1,30 +1,30 @@
+import json
 import os
 
-def tesst_upload_pdf(client):
-    pdf_path = 'test.pdf'
-    with open(pdf_path, 'wb') as f:
-        f.write(b'%PDF-1.7\n')
-
+def test_upload_pdf(client):
     data = {
-        'name': 'test',
-        'title': 'test',
-        'body': 'test',
-        'tags': 'test',
-        'is_public': True,
-        'description': 'test'
+        'file': (open('app/uploads/robothand.pdf', 'rb'), 'robothand.pdf'),
+        'label': 'Sample PDF'
     }
-    with open(pdf_path, 'rb') as pdf_file:
-        response = client.post('/api/upload_pdf', data=data, content_type='multipart/form-data', files={'pdf_file': pdf_file})
+    response = client.post('/upload', data=data, content_type='multipart/form-data')
+    assert response.status_code == 200
+    assert response.get_json() == {"message": "PDF uploaded and labeled successfully."}
 
-    assert response.status_code == 201
-    assert 'id' in response.get_json()
+def test_get_labels(client):
+    response = client.get('/labels')
+    assert response.status_code == 200
+    labels = response.get_json()
+    assert isinstance(labels, list)
+    if labels:
+        assert "filename" in labels[0]
+        assert "label" in labels[0]
 
-    os.remove(pdf_path)
+def test_process_json(client):
+    data = {'filename': 'test.pdf', 'label': 'Test Label'}
+    response = client.post('/process', data=json.dumps(data), content_type='application/json')
+    assert response.status_code == 200
+    assert response.get_json() == {"message": "JSON processed and labeled successfully."}
 
-# def test_cors_headers(client):
-#     response = client.get('/api/texts')
-
-#     assert response.status_code == 200
-
-#     assert 'Access-Control-Allow-Origin' in response.headers
-#     assert response.headers['Access-Control-Allow-Origin'] == '*'
+    response = client.get('/labels')
+    labels = response.get_json()
+    assert any(label['filename'] == 'test.pdf' and label['label'] == 'Test Label' for label in labels)

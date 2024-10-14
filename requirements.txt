@@ -5,4 +5,4 @@ Flask-SQLAlchemy
 mysql-connector-python
 pytest
 Werkzeug
-python-dotenv
+Flask-RESTful

@@ -8,7 +8,6 @@ services:
       - "5000:5000"
     environment:
       FLASK_ENV: development
-      DATABASE_URI: mysql+mysqlconnector://user:password@db/database
     depends_on:
       - db
 

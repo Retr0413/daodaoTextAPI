@@ -1,51 +1,62 @@
-from flask import request, jsonify, send_from_directory, current_app
+from flask import request, jsonify
+from flask_restful import Api, Resource
+from app.models import db, Text
 import os
-from werkzeug.utils import secure_filename
-from . import api_blueprint
-from ..models import Text
-from ..extensions import db
-from ..utils import allowed_file
 
-@api_blueprint.route('/api/texts', methods=['POST'])
-def create_text():
-    data = request.form.to_dict()
-    file = request.files.get('pdf_file')
+UPLOAD_FOLDER = 'app/uploads'
 
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder)
-        file.save(os.path.join(upload_folder, filename))
-        pdf_path = os.path.join(upload_folder, filename)
-    else:
-        pdf_path = None
+class UploadPDF(Resource):
+    def post(self):
+        pdf = request.files.get('file')
+        name = request.form.get('name')
+        title = request.form.get('title')
+        body = request.form.get('body')
+        tags = request.form.get('tags', '')  
 
-    text = Text(
-        name=data['name'],
-        title=data['title'],
-        thumbnail=data.get('thumbnail'),
-        description=data.get('description'),  
-        body=data['body'],
-        tags=data.get('tags'),
-        is_public=data.get('is_public', True),
-        pdf_path=pdf_path
-    )
-    db.session.add(text)
-    db.session.commit()
-    return jsonify({'message': 'Text created successfully', 'id': text.id}), 201
+        if not pdf or not name or not title or not body:
+            return jsonify({'error': "Missing required fields"}), 400
 
-@api_blueprint.route('/api/texts/<int:id>', methods=['GET'])
-def get_text(id):
-    text = Text.query.get_or_404(id)
-    return jsonify(text.serialize())
+        filepath = os.path.join(UPLOAD_FOLDER, pdf.filename)
+        pdf.save(filepath)
 
-@api_blueprint.route('/api/texts/<int:id>/download', methods=['GET'])
-def download_pdf(id):
-    text = Text.query.get_or_404(id)
-    if text.pdf_path and os.path.exists(text.pdf_path):
-        directory = os.path.dirname(text.pdf_path)
-        filename = os.path.basename(text.pdf_path)
-        return send_from_directory(directory, filename, as_attachment=True)
-    else:
-        return jsonify({'message': 'PDF file not found'}), 404
+        new_text = Text(
+            name=name,
+            title=title,
+            body=body,
+            tags=tags,
+            pdf_path=filepath
+        )
+        db.session.add(new_text)
+        db.session.commit()
+
+        return jsonify({'message': 'PDF uploaded successfully'})
+
+class GetLabels(Resource):
+    def get(self):
+        texts = Text.query.all()
+        return jsonify([text.serialize() for text in texts])
+
+class ProcessJSON(Resource):
+    def post(self):
+        data = request.json
+
+        if not data or 'name' not in data or 'title' not in data or 'body' not in data:
+            return jsonify({'error': 'Invalid JSON'}), 400
+
+        new_text = Text(
+            name=data['name'],
+            title=data['title'],
+            body=data['body'],
+            tags=data.get('tags', ''),
+            pdf_path=data.get('pdf_path', '')
+        )
+        db.session.add(new_text)
+        db.session.commit()
+
+        return jsonify({'message': 'JSON processed successfully'})
+
+def create_api(app):
+    api = Api(app)
+    api.add_resource(UploadPDF, '/api/upload')
+    api.add_resource(GetLabels, '/api/labels')
+    api.add_resource(ProcessJSON, '/api/process')
